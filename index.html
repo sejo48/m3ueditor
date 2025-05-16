@@ -1,230 +1,141 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editor M3U/M3U8 Interactivo v3.12 (Botón Guardar)</title>
-    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-static@latest/font/lucide.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-    <style>
-        /* Styles remain the same as v3.11 */
-        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%); color: #e2e8f0; min-height: 100vh; }
-        .glass-card { background: rgba(255, 255, 255, 0.08); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 1rem; box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2); padding: 1.5rem; margin-bottom: 1.5rem; }
-        .action-button { padding: 0.5rem 1rem; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 0.5rem; transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.9rem; cursor: pointer; color: #e2e8f0; }
-        .action-button:hover { background: rgba(255, 255, 255, 0.25) !important; transform: translateY(-1px); border-color: rgba(255, 255, 255, 0.4); }
-        .action-button:active { transform: translateY(0); background: rgba(255, 255, 255, 0.15) !important; }
-        .delete-button { background-color: #e53e3e; border-color: transparent; color: white; }
-        .delete-button:hover { background-color: #c53030 !important; color: white; }
-        .download-button { background-color: #4299e1; border-color: transparent; color: white; }
-        .download-button:hover { background-color: #3182ce !important; color: white; }
-        /* Style for the new Save button */
-        .save-button { background-color: #48bb78; border-color: transparent; color: white; } /* Green */
-        .save-button:hover { background-color: #38a169 !important; color: white; } /* Darker Green */
-
-        .table-container { max-height: 60vh; overflow-y: auto; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 0.5rem; margin-bottom: 1.5rem; }
-        table { width: 100%; border-collapse: collapse; background: rgba(255, 255, 255, 0.05); }
-        th, td { padding: 0.75rem 1rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); text-align: left; vertical-align: middle; }
-        th { background-color: #4a5568; color: #e2e8f0; position: sticky; top: 0; z-index: 10; font-weight: 600; border-bottom: 1px solid rgba(255, 255, 255, 0.2); }
-        tr:hover { background: rgba(255, 255, 255, 0.03); }
-        .logo-container { width: 3rem; height: 3rem; position: relative; display: flex; align-items: center; justify-content: center; background-color: rgba(255, 255, 255, 0.05); border-radius: 0.25rem; }
-        .logo-container img { display: block; max-width: 100%; max-height: 100%; height: auto; border-radius: 0.25rem; object-fit: contain; }
-        .logo-placeholder { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background-color: rgba(74, 85, 104, 0.7); color: #a0aec0; font-size: 0.7rem; border-radius: 0.25rem; text-align: center; line-height: 1.2; padding: 2px; visibility: hidden; opacity: 0; transition: opacity 0.2s ease; }
-        .logo-placeholder.visible { visibility: visible; opacity: 1; }
-        .glass-input { background-color: #e2e8f0; border: 1px solid #cbd5e0; border-radius: 0.5rem; padding: 0.5rem 1rem; color: #2d3748; width: 100%; font-size: 0.9rem; transition: background-color 0.2s ease, border-color 0.2s ease; }
-        .glass-input::placeholder { color: #a0aec0; opacity: 1; }
-        .glass-input:focus { outline: none; background-color: #cbd5e0; box-shadow: 0 0 0 2px rgba(99, 179, 237, 0.5); border-color: #a0aec0; }
-        #searchInput { padding-left: 2.5rem; }
-        .search-icon { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: #a0aec0; pointer-events: none; }
-        .channel-select { appearance: none; width: 1.25rem; height: 1.25rem; border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 0.25rem; display: inline-block; vertical-align: middle; position: relative; cursor: pointer; background-color: rgba(255, 255, 255, 0.1); transition: background-color 0.2s ease, border-color 0.2s ease; }
-        .channel-select:checked { background-color: #4299e1; border-color: #4299e1; }
-        .channel-select:checked::after { content: ''; display: block; width: 0.3rem; height: 0.6rem; border: solid white; border-width: 0 2px 2px 0; transform: rotate(45deg) translate(-50%, -50%); position: absolute; left: 50%; top: 45%; }
-        .channel-select:focus { outline: none; box-shadow: 0 0 0 2px rgba(99, 179, 237, 0.5); }
-        #channelCountBadge { display: inline-block; margin-left: 0.75rem; padding: 0.15rem 0.6rem; font-size: 0.8rem; font-weight: 600; background-color: #4a5568; color: #e2e8f0; border-radius: 9999px; vertical-align: middle; }
-        .notification { position: fixed; bottom: 1rem; right: 1rem; background: #68d391; color: #1a202c; padding: 1rem; border-radius: 0.5rem; display: none; z-index: 1000; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); font-weight: 500; }
-        .notification.error { background: #f56565; color: white; }
-        .notification.warning { background: #f6e05e; color: #1a202c; }
-        .notification.show { display: block; animation: slideIn 0.3s ease-out; }
-        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        .table-container::-webkit-scrollbar { width: 8px; }
-        .table-container::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
-        .table-container::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
-        .table-container::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
-    </style>
-</head>
-<body class="p-4 md:p-8">
-    <div class="container mx-auto max-w-7xl">
-        <header class="mb-8 text-center">
-            <h1 class="text-3xl md:text-4xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
-                <i class="lucide lucide-list-video mr-2"></i>Editor M3U/M3U8
-            </h1>
-        </header>
-
-        <div class="glass-card">
-             <h2 class="text-xl font-semibold mb-4 flex items-center gap-2"><i class="lucide lucide-upload-cloud"></i>Cargar Lista</h2>
-             <div class="space-y-4">
-                 <div class="flex flex-col sm:flex-row gap-4">
-                     <input type="file" id="fileInput" class="hidden" accept=".m3u,.m3u8">
-                     <label for="fileInput" class="action-button flex-shrink-0"> <i class="lucide lucide-file-up"></i> Cargar Archivo </label>
-                     <input type="url" id="urlInput" placeholder="Pegar URL de la lista M3U/M3U8 aquí" class="glass-input flex-grow">
-                     <button id="loadUrlBtn" class="action-button flex-shrink-0"> <i class="lucide lucide-link"></i> Cargar URL </button>
-                 </div>
-             </div>
-         </div>
-
-        <div id="editorSection" class="glass-card hidden">
-            <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
-                <h2 class="text-xl font-semibold flex items-center gap-2">
-                    <i class="lucide lucide-list-checks"></i>Canales
-                    <span id="channelCountBadge">0</span> </h2>
-                <div class="flex gap-4 items-center">
-                     <button id="selectAllBtn" class="action-button text-sm" title="Seleccionar Todos"> <i class="lucide lucide-check-square"></i> Todo </button>
-                     <button id="deselectAllBtn" class="action-button text-sm" title="Deseleccionar Todos"> <i class="lucide lucide-square"></i> Ninguno </button>
-                    <button id="addChannelBtn" class="action-button"> <i class="lucide lucide-plus-circle"></i> Nuevo Canal </button>
-                </div>
-            </div>
-
-            <div class="mb-4 relative">
-                 <i class="lucide lucide-search search-icon"></i>
-                 <input type="search" id="searchInput" placeholder="Buscar por título, grupo o URL..." class="glass-input w-full">
-            </div>
-
-
-            <div class="table-container">
-                <table id="channelsTable">
-                    <thead>
-                        <tr>
-                            <th class="w-12 text-center"><i class="lucide lucide-check-square"></i></th>
-                            <th class="w-16">#</th>
-                            <th class="w-20">Logo</th>
-                            <th>URL Logo</th>
-                            <th>Título</th>
-                            <th>Grupo</th>
-                            <th>URL Stream</th>
-                            <th class="w-32 text-center">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="channelsTableBody">
-                        <tr id="noChannelsRow"> <td colspan="8" class="text-center text-gray-400 py-8">Cargando lista guardada...</td> </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="mt-4 flex justify-end gap-4">
-                 <button id="saveChangesBtn" class="action-button save-button">
-                     <i class="lucide lucide-save"></i> Guardar Cambios
-                 </button>
-                <button id="downloadBtn" class="action-button download-button">
-                    <i class="lucide lucide-download"></i> Descargar Seleccionados
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // --- DOM Element References ---
-        const fileInput = document.getElementById('fileInput');
-        const urlInput = document.getElementById('urlInput');
-        const loadUrlBtn = document.getElementById('loadUrlBtn');
-        const editorSection = document.getElementById('editorSection');
-        const channelsTableBody = document.getElementById('channelsTableBody');
-        const addChannelBtn = document.getElementById('addChannelBtn');
-        const downloadBtn = document.getElementById('downloadBtn');
-        const saveChangesBtn = document.getElementById('saveChangesBtn'); // New Save Button Ref
-        const noChannelsRow = document.getElementById('noChannelsRow');
-        const selectAllBtn = document.getElementById('selectAllBtn');
-        const deselectAllBtn = document.getElementById('deselectAllBtn');
-        const channelCountBadge = document.getElementById('channelCountBadge');
-        const searchInput = document.getElementById('searchInput');
-        let sortableInstance = null;
-        const LOCAL_STORAGE_KEY = 'm3uEditorChannels';
-
-        // --- Utility Functions ---
-        function showNotification(message, type = 'success') { /* ... (unchanged) ... */ document.querySelectorAll(`.notification.${type}`).forEach(n => n.remove()); const notification = document.createElement('div'); notification.className = `notification ${type}`; notification.textContent = message; document.body.appendChild(notification); void notification.offsetWidth; notification.classList.add('show'); setTimeout(() => { notification.classList.remove('show'); setTimeout(() => notification.remove(), 500); }, 3000); }
-        function updatePlaceholderRowVisibility() { /* ... (unchanged) ... */ const hasSearchTerm = searchInput.value.trim().length > 0; const visibleChannelRows = channelsTableBody.querySelectorAll('tr:not(#noChannelsRow)[style*="display: none;"]'); const totalChannelRows = channelsTableBody.querySelectorAll('tr:not(#noChannelsRow)'); const allRowsHidden = visibleChannelRows.length === totalChannelRows.length && totalChannelRows.length > 0; if (totalChannelRows.length === 0) { noChannelsRow.classList.remove('hidden'); noChannelsRow.querySelector('td').textContent = 'No se encontraron canales. Carga una lista o añade uno nuevo.'; } else if (hasSearchTerm && allRowsHidden) { noChannelsRow.classList.remove('hidden'); noChannelsRow.querySelector('td').textContent = 'No se encontraron canales que coincidan con la búsqueda.'; } else { noChannelsRow.classList.add('hidden'); } }
-        function updateChannelCount() { /* ... (unchanged) ... */ const count = channelsTableBody.querySelectorAll('tr:not(#noChannelsRow)').length; if (channelCountBadge) { channelCountBadge.textContent = count; } console.log(`Channel count updated: ${count}`); }
-        function debounce(func, wait) { /* ... (unchanged) ... */ let timeout; return function executedFunction(...args) { const later = () => { clearTimeout(timeout); func(...args); }; clearTimeout(timeout); timeout = setTimeout(later, wait); }; };
-        function escapeHTML(str) { /* ... (unchanged) ... */ if (!str) return ''; return str.toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;'); }
-
-        // --- Local Storage Functions ---
-        function saveChannelsToLocalStorage() { /* ... (unchanged) ... */
-            console.log("Attempting to save channels to localStorage..."); const channels = []; const rows = channelsTableBody.querySelectorAll('tr:not(#noChannelsRow)'); rows.forEach((row) => { const url = row.querySelector('.channel-url')?.value.trim(); if (url) { channels.push({ logo: row.querySelector('.channel-logo-url')?.value.trim() || '', title: row.querySelector('.channel-title')?.value.trim() || '', group: row.querySelector('.channel-group')?.value.trim() || '', url: url }); } }); try { if (channels.length > 0) { const jsonData = JSON.stringify(channels); localStorage.setItem(LOCAL_STORAGE_KEY, jsonData); console.log(`Saved ${channels.length} channels to localStorage.`); } else { localStorage.removeItem(LOCAL_STORAGE_KEY); console.log("No channels to save, cleared localStorage."); } } catch (error) { console.error("Error saving channels to localStorage:", error); showNotification('Error al guardar la lista localmente.', 'error'); }
-        }
-        const debouncedSaveChannels = debounce(saveChannelsToLocalStorage, 750);
-        function loadChannelsFromLocalStorage() { /* ... (unchanged) ... */
-            console.log("Attempting to load channels from localStorage..."); const jsonData = localStorage.getItem(LOCAL_STORAGE_KEY); if (!jsonData) { console.log("No saved channels found."); populateTable([]); return false; } try { const channels = JSON.parse(jsonData); if (Array.isArray(channels) && channels.length > 0) { console.log(`Loaded ${channels.length} channels.`); populateTable(channels, 'localStorage'); showNotification(`Lista anterior cargada (${channels.length} canales).`, 'success'); return true; } else { console.log("Saved data empty/invalid."); populateTable([]); localStorage.removeItem(LOCAL_STORAGE_KEY); return false; } } catch (error) { console.error("Error parsing channels from localStorage:", error); showNotification('Error al cargar lista guardada.', 'error'); localStorage.removeItem(LOCAL_STORAGE_KEY); populateTable([]); return false; }
-        }
-
-        // --- M3U Parsing Logic ---
-        function parseExtInf(line) { /* ... (unchanged) ... */ const mainPartsMatch = line.match(/#EXTINF:(-?\d*\.?\d*)\s*(.*?)\s*,(.*)/); if (!mainPartsMatch) { console.warn("Invalid EXTINF:", line); return null; } const [, , attributesString, title] = mainPartsMatch; let logo = '', group = ''; const attributeRegex = /(\S+?)=("([^"]*)"|'([^']*)'|(\S+))/g; let match; while ((match = attributeRegex.exec(attributesString)) !== null) { const key = match[1].toLowerCase(); const value = match[3] || match[4] || match[5]; if (key === 'tvg-logo' || key === 'logo') logo = value; if (key === 'group-title') group = value; } let finalTitle = title.trim(); if (!group && finalTitle.includes('|')) { const parts = finalTitle.split('|'); if (parts.length === 2) { group = parts[0].trim(); finalTitle = parts[1].trim(); } } return { title: finalTitle, logo, group }; }
-        function parseM3U(content) { /* ... (unchanged) ... */ console.log("Parsing M3U..."); const lines = content.split(/[\r\n]+/); const channels = []; let currentChannel = null; if (!lines[0]?.trim().startsWith('#EXTM3U')) { showNotification('Advertencia: Archivo no inicia con #EXTM3U.', 'warning'); } lines.forEach((line, index) => { const trimmedLine = line.trim(); const lineNum = index + 1; if (!trimmedLine) return; if (trimmedLine.startsWith('#EXTINF:')) { if (currentChannel) console.warn(`Line ${lineNum}: New #EXTINF before URL.`); currentChannel = parseExtInf(trimmedLine); if (!currentChannel) console.warn(`Line ${lineNum}: Failed EXTINF parse.`); } else if (currentChannel && (trimmedLine.startsWith('http') || trimmedLine.startsWith('rtmp') || trimmedLine.startsWith('rtsp'))) { currentChannel.url = trimmedLine; channels.push(currentChannel); currentChannel = null; } else if (!trimmedLine.startsWith('#') && (trimmedLine.startsWith('http') || trimmedLine.startsWith('rtmp') || trimmedLine.startsWith('rtsp'))) { channels.push({ title: `Canal ${channels.length + 1}`, logo: '', group: '', url: trimmedLine }); currentChannel = null; } else if (currentChannel && !trimmedLine.startsWith('#')) { console.warn(`Line ${lineNum}: Unexpected line after EXTINF.`); currentChannel = null; } }); if (currentChannel) console.warn(`EOF with unfinished channel.`); console.log(`Parsed ${channels.length} channels.`); return channels; }
-
-        // --- Table Population and Management ---
-        function populateTable(channels, source = 'unknown') { /* ... (unchanged) ... */ console.log(`Populating table with ${channels.length} channels from source: ${source}`); channelsTableBody.innerHTML = ''; channelsTableBody.appendChild(noChannelsRow); if (channels.length > 0) { channels.forEach((channel, index) => { if (channel?.url) { const row = createChannelRow(channel, index); channelsTableBody.insertBefore(row, noChannelsRow); } else { console.warn("Skipping invalid channel:", channel); } }); } editorSection.classList.remove('hidden'); if (source !== 'localStorage') { searchInput.value = ''; } filterChannels(); initializeSortable(); updateChannelCount(); }
-        function createChannelRow(channel, index) { /* ... (unchanged) ... */ const row = document.createElement('tr'); row.dataset.id = `channel-${index}`; const logoSrc = channel.logo || ''; const title = channel.title || ''; const group = channel.group || ''; const url = channel.url || ''; row.innerHTML = ` <td class="text-center align-middle"><input type="checkbox" class="channel-select" title="Seleccionar"></td> <td class="text-center text-gray-400 align-middle">${index + 1}</td> <td class="align-middle"><div class="logo-container"><img alt="Logo" loading="lazy" src="${escapeHTML(logoSrc)}"><div class="logo-placeholder">No Logo</div></div></td> <td class="align-middle"><input type="text" class="glass-input channel-logo-url" value="${escapeHTML(logoSrc)}" placeholder="URL Logo"></td> <td class="align-middle"><input type="text" class="glass-input channel-title" value="${escapeHTML(title)}" placeholder="Título"></td> <td class="align-middle"><input type="text" class="glass-input channel-group" value="${escapeHTML(group)}" placeholder="Grupo"></td> <td class="align-middle"><input type="text" class="glass-input channel-url" value="${escapeHTML(url)}" placeholder="URL Stream"></td> <td class="text-center align-middle"><div class="flex justify-center"><button class="action-button delete-button" title="Eliminar"><i class="lucide lucide-trash-2 mr-1"></i><span>Eliminar</span></button></div></td> `; const logoImg = row.querySelector('.logo-container img'); const logoPlaceholder = row.querySelector('.logo-placeholder'); const logoUrlInput = row.querySelector('.channel-logo-url'); const updateLogoDisplay = (url) => { if (url) { logoImg.src = escapeHTML(url); logoImg.style.visibility = 'visible'; logoPlaceholder.classList.remove('visible'); } else { logoImg.src = ''; logoImg.style.visibility = 'hidden'; logoPlaceholder.classList.add('visible'); } }; logoImg.onerror = () => { logoImg.style.visibility = 'hidden'; logoPlaceholder.classList.add('visible'); }; logoImg.onload = () => { if(logoImg.getAttribute('src')) { logoImg.style.visibility = 'visible'; logoPlaceholder.classList.remove('visible'); } }; updateLogoDisplay(logoSrc); logoUrlInput.addEventListener('input', (e) => updateLogoDisplay(e.target.value.trim())); return row; }
-        function initializeSortable() { /* ... (calls save onEnd) ... */ if (sortableInstance) sortableInstance.destroy(); sortableInstance = null; if (window.Sortable && channelsTableBody.querySelectorAll('tr:not(#noChannelsRow)').length > 0) { sortableInstance = new Sortable(channelsTableBody, { animation: 150, handle: 'td:nth-child(2)', filter: '#noChannelsRow, .channel-select', preventOnFilter: true, ghostClass: 'bg-blue-900/50', onEnd: () => { updateRowNumbers(); saveChannelsToLocalStorage(); } }); console.log("SortableJS initialized."); } else { console.log("SortableJS not initialized."); } }
-        function updateRowNumbers() { /* ... (unchanged) ... */ channelsTableBody.querySelectorAll('tr:not(#noChannelsRow)').forEach((row, index) => { const cell = row.querySelector('td:nth-child(2)'); if (cell) cell.textContent = index + 1; }); console.log("Row numbers updated."); }
-        function filterChannels() { /* ... (unchanged) ... */ const searchTerm = searchInput.value.toLowerCase().trim(); const rows = channelsTableBody.querySelectorAll('tr:not(#noChannelsRow)'); let matchFound = false; rows.forEach(row => { const logoUrl = row.querySelector('.channel-logo-url')?.value.toLowerCase() || ''; const title = row.querySelector('.channel-title')?.value.toLowerCase() || ''; const group = row.querySelector('.channel-group')?.value.toLowerCase() || ''; const streamUrl = row.querySelector('.channel-url')?.value.toLowerCase() || ''; const isMatch = searchTerm === '' || logoUrl.includes(searchTerm) || title.includes(searchTerm) || group.includes(searchTerm) || streamUrl.includes(searchTerm); row.style.display = isMatch ? '' : 'none'; if (isMatch) { matchFound = true; } }); console.log(`Filtered channels for term: "${searchTerm}". Match found: ${matchFound}`); updatePlaceholderRowVisibility(); }
-
-        // --- M3U Generation and Download ---
-        function generateM3U(channels) { /* ... (unchanged) ... */ let m3u = '#EXTM3U\n'; channels.forEach(c => { let extinf = '#EXTINF:-1'; const attrs = []; if (c.logo) attrs.push(`tvg-logo="${c.logo}"`); if (c.group) attrs.push(`group-title="${c.group}"`); if (attrs.length > 0) extinf += ' ' + attrs.join(' '); extinf += `,${c.title || 'Canal'}`; m3u += extinf + '\n' + (c.url || '') + '\n'; }); return m3u; }
-        function downloadM3UFile(content, filename) { /* ... (unchanged) ... */ const blob = new Blob([content], { type: 'application/vnd.apple.mpegurl;charset=utf-8' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.style.display = 'none'; a.href = url; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); console.log(`Download: ${filename}`); }
-
-        // --- Event Listeners ---
-        fileInput.addEventListener('change', function(e) { /* ... (calls save) ... */ const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(event) { try { const content = event.target.result; if (!content && file.size > 0) throw new Error("Error lectura."); if (!content && file.size === 0) throw new Error("Archivo vacío."); const channels = parseM3U(content); populateTable(channels, 'file'); saveChannelsToLocalStorage(); showNotification(`Cargado: ${file.name}`, 'success'); } catch (error) { showNotification(`Error: ${error.message}`, 'error'); populateTable([], 'file-error'); } finally { fileInput.value = ''; } }; reader.onerror = () => { showNotification('Error al leer archivo', 'error'); populateTable([], 'file-error'); fileInput.value = ''; }; reader.readAsText(file); });
-        loadUrlBtn.addEventListener('click', function() { /* ... (calls save) ... */ const url = urlInput.value.trim(); if (!url) { showNotification('Ingresa URL', 'warning'); return; } try { new URL(url); } catch (_) { showNotification('URL no válida', 'error'); return; } showNotification('Cargando URL...', 'success'); fetch(url) .then(r => { if (!r.ok) throw new Error(`Error ${r.status}`); return r.text(); }) .then(c => { if (!c) throw new Error("Respuesta vacía."); const channels = parseM3U(c); populateTable(channels, 'url'); saveChannelsToLocalStorage(); showNotification('Cargado desde URL', 'success'); urlInput.value = ''; }) .catch(e => { showNotification(`Error URL: ${e.message}. ${e instanceof TypeError ? 'Verifica CORS.' : ''}`, 'error'); populateTable([], 'url-error'); }); });
-        addChannelBtn.addEventListener('click', () => { /* ... (calls save) ... */ const index = channelsTableBody.querySelectorAll('tr:not(#noChannelsRow)').length; const row = createChannelRow({ title: '', group: '', logo: '', url: '' }, index); channelsTableBody.insertBefore(row, noChannelsRow); updatePlaceholderRowVisibility(); initializeSortable(); row.querySelector('input.channel-title').focus(); showNotification('Nuevo canal añadido', 'success'); updateChannelCount(); filterChannels(); saveChannelsToLocalStorage(); });
-        selectAllBtn.addEventListener('click', () => channelsTableBody.querySelectorAll('tr:not(#noChannelsRow) .channel-select').forEach(cb => cb.checked = true));
-        deselectAllBtn.addEventListener('click', () => channelsTableBody.querySelectorAll('tr:not(#noChannelsRow) .channel-select').forEach(cb => cb.checked = false));
-        downloadBtn.addEventListener('click', () => { /* ... (logic unchanged) ... */ const channelsToExport = []; channelsTableBody.querySelectorAll('tr:not(#noChannelsRow)').forEach((row, index) => { if (row.querySelector('.channel-select')?.checked) { const url = row.querySelector('.channel-url')?.value.trim(); if (url) { channelsToExport.push({ logo: row.querySelector('.channel-logo-url')?.value.trim() || '', title: row.querySelector('.channel-title')?.value.trim() || `Canal ${index + 1}`, group: row.querySelector('.channel-group')?.value.trim() || '', url: url }); } else { showNotification(`Canal "${row.querySelector('.channel-title')?.value.trim() || index+1}" omitido (sin URL).`, 'warning'); } } }); if (channelsToExport.length === 0) { showNotification('No hay canales seleccionados', 'warning'); return; } try { downloadM3UFile(generateM3U(channelsToExport), `seleccion_${channelsToExport.length}_canales.m3u`); showNotification(`${channelsToExport.length} canales listos`, 'success'); } catch (error) { showNotification(`Error al generar: ${error.message}`, 'error'); } });
-        searchInput.addEventListener('input', filterChannels);
-
-        // NEW: Manual Save Button Listener
-        saveChangesBtn.addEventListener('click', () => {
-            saveChannelsToLocalStorage(); // Call the existing save function
-            showNotification('Cambios guardados localmente.', 'success'); // Provide feedback
-        });
-
-        // Event Delegation for Delete button
-        channelsTableBody.addEventListener('click', (event) => {
-            const deleteButton = event.target.closest('button.delete-button');
-            if (deleteButton) {
-                const row = deleteButton.closest('tr'); if (!row || row === noChannelsRow) return;
-                const title = row.querySelector('.channel-title')?.value.trim() || 'este canal';
-                if (confirm(`¿Eliminar "${title}"?`)) {
-                    row.remove(); updateRowNumbers(); updatePlaceholderRowVisibility(); initializeSortable();
-                    showNotification('Canal eliminado', 'success'); updateChannelCount();
-                    saveChannelsToLocalStorage(); // Save after deleting
-                }
-            }
-        });
-
-        // Delegated listener for input changes -> triggers debounced save
-        channelsTableBody.addEventListener('input', (event) => {
-             if (event.target.matches('.glass-input')) {
-                 console.log("Input changed, triggering debounced save...");
-                 debouncedSaveChannels(); // Auto-save with debounce
-             }
-        });
-
-         // --- Initial Setup ---
-         document.addEventListener('DOMContentLoaded', () => {
-             console.log("DOM loaded");
-             if (!loadChannelsFromLocalStorage()) {
-                 updatePlaceholderRowVisibility(); updateChannelCount();
-             }
-             if (channelsTableBody.querySelectorAll('tr:not(#noChannelsRow)').length > 0) {
-                 editorSection.classList.remove('hidden');
-             } else {
-                 editorSection.classList.remove('hidden'); // Show editor even if empty
-                 updatePlaceholderRowVisibility(); updateChannelCount();
-             }
-         });
-
-    </script>
-</body>
-</html>
+#EXTM3U
+#EXTINF:-1 tvg-logo="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRc0CfBLPTdVRLyxhsV8Hq3wfIeJAPwiC2TQOhBNoFV893ShXIpe0MWXG9nhjQnTPtsMTk&usqp=CAU" group-title="Canal de noticias local.",Telered
+https://k20.usastreams.com:8081/telered/index.m3u8
+#EXTINF:-1 tvg-logo="https://sicultura-live.s3.amazonaws.com/public/styles/large_retina/public/media/sinart_canal_13_1.png?itok=WgWfcqWw" group-title="Canal de entretenimiento.",Canal 13
+https://ssh101.bozztv.com/ssh101/sinart13/chunks.m3u8
+#EXTINF:-1 tvg-logo="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSf67Sxp-_WX2yWMZiWmW6teYlYvuPvJpud-w&s" group-title="Canal de deportes.",Canal 2
+https://d30230c1j3h08x.cloudfront.net/360p.m3u8
+#EXTINF:-1 tvg-logo="https://xtrematv.com/wp-content/uploads/2023/05/canal-1-2.jpg" group-title="Canal retro tv.",Xtrematv
+https://liveingesta118.cdnmedia.tv/trivision36live/smil:dvrlive.smil/playlist.m3u8
+#EXTINF:-1 tvg-logo="https://canalesdominicanos.live/template/images/radios/mega-cine-tv.png" group-title="Canal retro tv.",Megacine TV
+https://cloudflare.streamgato.us:3125/live/megacinetvlive.m3u8
+#EXTINF:-1 tvg-logo="https://sicultura-live.s3.amazonaws.com/public/2022-11/313401143_527193602751613_1789836145711014030_n.png" group-title="Canal de noticias regional.",Canal 36
+https://stmv6.voxtvhd.com.br/xtremacartoons/xtremacartoons/playlist.m3u8
+#EXTINF:-1 tvg-logo="https://play-lh.googleusercontent.com/zLkTnFfdGGq5-cuY0DBvsCoiRUToWFA8rcm_Z3ieUr7rwgmzyojRXIfqMXt9dm4ocjs" group-title="Canal  retro.",Retro tv
+https://server.streamtech.com.co:5443/retroTv/streams/sJlaR9zuk3cJ8jqN4467369974529.m3u8
+#EXTINF:-1 tvg-logo="https://teleclasica.com/wp-content/uploads/2025/01/OTHER.png" group-title="Canal de películas clásicas.",Tele Clacica
+https://ssh101stream.ssh101.com/akamaissh101/ssh101/teleclasik/chunks.m3u8
+#EXTINF:-1 tvg-logo="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSBsKLLZbFpvVQrOzRAnA9BCRraLxP3-GLwvBv30iNI6TpPz1o51sa1de7pGKS40Quzajw&usqp=CAU" group-title="Canal de series retro.",TV Retro
+https://ssh101.bozztv.com/ssh101/tvretropalmares/chunks.m3u8
+#EXTINF:-1 tvg-logo="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR9YKvejKBdJWBUfm0Oc32tKTO1QKQXXu2s4A&s" group-title="Canal de entretenimiento.",Tele sistema
+https://k20.usastreams.com:8081/telesistema/tracks-v1a1/mono.m3u8
+#EXTINF:-1 tvg-logo="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSgoRuZwypFBxNvCCqvC2hjEFnPdhI50u8ZgXnRQIOX3D0j03kEOFCofSIN-pdFF5T9VN0&usqp=CAU" group-title="Canal de deportes.",REPRETEL-C4
+https://alba-cr-repretel-c4.stream.mediatiquestream.com/index.m3u8
+#EXTINF:-1 tvg-logo="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRCPgX3BAyVJrhddZBS934xmT6Kev9EUhXHeQ&s" group-title="Canal de noticias.",Canal 1 CR
+https://59ef525c24caa.streamlock.net/canal1cr/canal1cr/playlist.m3u8
+#EXTINF:-1 tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/RepretelCanal112024.svg/1200px-RepretelCanal112024.svg.png" group-title="Canal de entretenimiento.",Canal 11
+https://alba-cr-repretel-c11.stream.mediatiquestream.com/480p.m3u8
+#EXTINF:-1 tvg-logo="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhqYT3mLOwSe2tCT9djITc1a4rC-hKxanvkywuAU8UeIkHaVkqwt1LDhrtUQqZO8m4cP-XHE4h-QnXlCBupaZ8oTASthEM7Rz5lAwu0l2_HRs9stLeJBvm8SUL4ONJ-kXWZM921yfOnAIdtz81kYBPy7JhQJLY8Lq1Ye4uuBeEawZvgAPT3-FfA0EaLfNkX/s600/extrema-tv.png" group-title="Canal de deportes extremos.",Extrematv
+https://627bb251f23c7.streamlock.net:444/ExtremaTV/ExtremaTV/playlist.m3u8
+#EXTINF:-1 tvg-logo="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTNtuYqz3KCkvM3aBb-Lg3YRtfoaVaDe9srK_6QZaajqCb7jS0RBcJ1lBUJaEIqJo21ahY&usqp=CAU" group-title="Canal local de Nicoya.",Nicoya TV
+https://59ef525c24caa.streamlock.net/nicoyatv/nicoyatv/chunklist_w1674958038.m3u8
+#EXTINF:-1 tvg-logo="https://pbs.twimg.com/profile_images/1399263932456607750/XYvenBB4_400x400.jpg" group-title="Canal de noticias y entretenimiento.",Canal 2
+https://rcntv-rcnmas-1-us.plex.wurl.tv/4300.m3u8
+#EXTINF:-1 tvg-logo="https://pbs.twimg.com/profile_images/1761972439863402496/HYFYy2Zg_400x400.jpg" group-title="Canal de noticias y deportes.",TV Azteca
+https://azt-mun.otteravision.com/azt/mun/mun_1080p.m3u8
+#EXTINF:-1 tvg-logo="https://pbs.twimg.com/profile_images/1399263932456607750/XYvenBB4_400x400.jpg" group-title="Canal de entretenimiento.",Canal 2
+https://marine2.miplay.cl/tateti/tracks-v1a1/mono.m3u8
+#EXTINF:-1 tvg-logo="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQNo8nRAN4wCgrjHF17KzyCdU34-SRV5oOcrQ&s" group-title="Canal de noticias.",24 horas
+https://rtvelivestream.rtve.es/rtvesec/24h/24h_main_dvr_720.m3u8
+#EXTINF:-1 tvg-logo="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQx0q4tLgJ1x4RdmIz885mRbQ6fHNbBt3_cKg&s" group-title="Canal de noticias y entretenimiento.",Metaversus
+https://vivo.solumedia.com:19360/metaversus/metaversus.m3u8
+#EXTINF:-1 tvg-logo="https://www.cxtv.com.br/img/Tvs/Logo/webp-m/a39ae0962d6b0b34320db480996652b7.webp" group-title="Canal de música retro.",Tvsretrogtlive
+https://cdn.streamhispanatv.net:3531/live/tvsretrogtlive.m3u8
+#EXTINF:-1 tvg-logo="https://yt3.googleusercontent.com/JOR8-8xL3x91J-1s4Rhu8N7odmnnrEFe5DDXxv9xRia88bCkkiWwiJQkUg3VFCScfRUxILaDNg=s900-c-k-c0x00ffffff-no-rj" group-title="Canal de entretenimiento y noticias.",Las estrellas
+https://channel01-onlymex.akamaized.net/hls/live/2022749/event01/index_1.m3u8
+#EXTINF:-1 tvg-logo="https://yt3.googleusercontent.com/WZacbtWNLdznCtQ5Au7EjtrVNmktZfQNiXOnIzTwllgNd1iRMhPITW-CQrGQjUVnS8IxN75UBA=s900-c-k-c0x00ffffff-no-rj" group-title="Canal de noticias y entretenimiento.",Tele Mundo
+https://nbcu-telemundoflorida-firetv.amagi.tv/playlist1080.m3u8
+#EXTINF:-1 tvg-logo="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSBxvhIPxIJvY8jcD7VFd6XnmqtnwC0YmUcG6Ttgtc3RSOnQrAcpq8bK8DljzNaqKchQbg&usqp=CAU" group-title="Canal de música retro.",Retro x
+https://acceso.radiosportstv.online:3259/hybrid/play.m3u8
+#EXTINF:-1 tvg-logo="https://cdn.rudo.video/assets/canal-13/live/logoApi_151f8e8d0c9e2a144f59f11ec492c3e91710874647.png" group-title="Películas clásicas latinas.",Latino Clásica
+https://streams2.sofast.tv/v1/master/611d79b11b77e2f571934fd80ca1413453772ac7/4d419a88-a62c-496f-b8a1-984e746f8259/manifest.m3u8
+#EXTINF:-1 tvg-logo="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTyeFcO1jqS7cHkeI6uFu8i1mXBb1hayIlshXespGXDMtv0YGhTBKzriaIGYUb4_TOMUd0&usqp=CAU" group-title="Noticias y entretenimiento de Miami.",Sol tv
+https://video03.logicahost.com.br/soltv/soltv/playlist.m3u8
+#EXTINF:-1 tvg-logo="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRIo1iQW2AJvIdVjUFVAwAxLgPALnvBMwGYFw&s" group-title="Canal local de Turrialba.",Mono
+https://cloudvideo.servers10.com:8081/8230/tracks-v1a1/mono.m3u8
+#EXTINF:-1 tvg-logo="https://milemisoras.com/img/channel/abd12be06e14bf48011ce97f584bfefb.png" group-title="Demostración.",Play
+https://tvservices.fullhd-streaming.com:3941/stream/play.m3u8
+#EXTINF:-1 tvg-logo="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRU4uLGOuQaNRSDK8lSiCjICHX0Ld_weJoskA&s" group-title="Canal local región Brunca.",Tele Brunca
+https://59ef525c24caa.streamlock.net/telebrunca/telebrunca/chunklist_w942921838.m3u8
+#EXTINF:-1 tvg-logo="https://i.ytimg.com/vi/hPwFk9PkcTs/maxresdefault.jpg" group-title="Canal local de Garabito.",Garabito TV
+https://59ef525c24caa.streamlock.net/garabitoTV/garabitotv/chunklist_w878297441.m3u8
+#EXTINF:-1 tvg-logo="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRF4WjCv7VeLbrEAtDzziTPFnO02S87ck8eLA&s" group-title="Entretenimiento.",Dreiko tv
+https://rtv.fullhd-streaming.com:19360/dreikotv/dreikotv.m3u8
+#EXTINF:-1 tvg-logo="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRKXtZ-XPSnx1sNV7Ilp7D-x8231NVgr_kk-Q&s" group-title="Noticias y entretenimiento.",WOW TV
+https://cdn.elsalvadordigital.com:1936/wowtv/smil:wowtv.smil/chunklist_w619053377_b700000_slen.m3u8
+#EXTINF:-1 tvg-logo="https://www.cxtv.com.br/img/Tvs/Logo/webp-l/a1e4076264abe6b6ccde87a587966abe.webp" group-title="Canal de entretenimiento.",Retro Cartoons
+https://stmv3.voxtvhd.com.br/xtremaretrocartoons/xtremaretrocartoons/playlist.m3u8
+#EXTINF:-1 tvg-logo="https://www.vivalivetv.com/public/files/shows/0/1/3668-294x165-FFFFFF.jpg" group-title="Deportes y noticias.",10 COSTA RICA
+https://acceso.radiosportstv.online:3285/hybrid/play.m3u8
+#EXTINF:-1 tvg-logo="https://image.roku.com/developer_channels/prod/685354bd84f85fe39c7ecae45018ccb60011681ba7838fd841e3f2392f4f6249.png" group-title="Infantil.",Extrema kits
+https://627bb251f23c7.streamlock.net:444/ExtremaKids/ExtremaKids/chunklist_w877184190.m3u8
+#EXTINF:-1 tvg-logo="https://sicultura-live.s3.amazonaws.com/public/2022-11/15994918_1331614376860617_5054855370716335928_o.jpg" group-title="Deportes y noticias.",Extra tv
+https://d2axu5ozwr5gk0.cloudfront.net/live_0.m3u8
+#EXTINF:-1 tvg-logo="https://pbs.twimg.com/profile_images/1510311834800246787/sfWgWmqk_400x400.jpg" group-title="Multimedios Costa Rica",Canal 8
+https://mdstrm.com/live-stream-playlist/5a7b1e63a8da282c34d65445/master.m3u8
+#EXTINF:-1 tvg-logo="https://radiocostarica.net/sites/default/files/styles/player_image/public/2024-05/Costa%20Rica%20Channel-Costa%20Rica.png.webp?itok=jdj8aeqR" group-title="Costa Rica Channel",Costa Rica Cannel
+https://video0.rogohosting.com:19360/8006/8006.m3u8
+#EXTINF:-1 tvg-logo="https://www.cxtv.com.br/img/Tvs/Logo/webp-l/16f8ed90cfdce23eb93131280ab06426.webp" group-title="Peliculas accion",Cine acción Extrema
+https://stmv6.voxtvhd.com.br/cineaccion/cineaccion/playlist.m3u8
+#EXTINF:-1 tvg-logo="https://radiocostarica.net/sites/default/files/styles/player_image/public/2024-06/GAM%20TV%20CR-Costa%20Rica_0.png.webp?itok=ExXxZFSr" group-title="Entretenimiento",Gam TV
+https://v2.azulstream.com:8081/gamtv/gamtv/tracks-v1a1/mono.m3u8
+#EXTINF:-1 tvg-logo="https://yt3.googleusercontent.com/h88IKJCItR4KafxYzqfMphDkLzXdREH24qDrW-CzFMedCCjBl4D2baR3xWF48tOkNltM6MM9hA=s900-c-k-c0x00ffffff-no-rj" group-title="Deportes.",Claro spots
+https://d35j504z0x2vu2.cloudfront.net/v1/manifest/0bc8e8376bd8417a1b6761138aa41c26c7309312/bein-sports-xtra-en-espanol/d3358062-b357-4738-9cfb-6824db0ada53/0.m3u8
+#EXTINF:-1 tvg-logo="https://play-lh.googleusercontent.com/W7wJ9CcfTsIlMC9GWk7qgom0JO6R4DoFnHN1DGKuI2OtLQ_3w5zYuscMngY0OZfXtfxn" group-title="Red Bull TV: deportes",Red Bull TV
+https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master.m3u8
+#EXTINF:-1 tvg-logo="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS9QUatPxBhTck6kKk1nTNsRuKLVgXUJfgVjA&s" group-title="VER MIAMI TV EN VIVO",Miami TV
+https://59ec5453559f0.streamlock.net/miamitv/smil:WEB/playlist.m3u8
+#EXTINF:-1 tvg-logo="https://play-lh.googleusercontent.com/U73kFg4Qya85ClsrZ0r8z4srpmZ2xb_85TlGjSwNnJvYdqcGVCkVL2KmQtK0heLnCMo" group-title="Retro Plus",Retro Plus
+https://ssh101stream.ssh101.com/akamaissh101/ssh101/retroplustv/chunks.m3u8
+#EXTINF:-1 tvg-logo="https://i.imgur.com/9Nh2mo9.png",Antena seis tv
+https://video1.azulstream.com:8081/antenaseistv/index.m3u8
+#EXTINF:-1 tvg-logo="https://i.imgur.com/Nn8BtH5.png",REPRETEL-C2
+https://alba-cr-repretel-c2.stream.mediatiquestream.com/index.m3u8
+#EXTINF:-1 tvg-logo="https://i.imgur.com/pqMTMgF.jpg",Canal 17
+https://acceso.radiosportstv.online:3430/hybrid/play.m3u8
+#EXTINF:-1 tvg-logo="https://i.imgur.com/sgRDRBK.jpg",Canal 3
+https://cloudvideo.servers10.com:8081/8120/index.m3u8
+#EXTINF:-1 tvg-logo="https://i.imgur.com/nfKJftW.png",REPRETEL 6
+ttps://d1vr8yxz55pucr.cloudfront.net/index.m3u8
+#EXTINF:-1 tvg-logo="https://i.ibb.co/vJZqrFY/a4ed367c69c23110d458a332af95be0be64566f288ccb5f261689344e6ba5e0d.png",CBTV
+https://cloudvideo.servers10.com:8081/8030/index.m3u8
+#EXTINF:-1 tvg-logo="https://i.imgur.com/CFXZ8j0.png",Cristo vicion
+https://3a310f6ec721e6b362fcd22772b57f36a2fe6bb2.tabeelcr.com:8080/cristovision31/iptv.m3u8
+#EXTINF:-1 tvg-logo="https://i.imgur.com/YwUVTmS.png",enlace Hd
+https://livecdn.enlace.plus/enlace/smil:enlace-hd.smil/playlist.m3u8
+#EXTINF:-1 tvg-logo="https://i.ibb.co/rdpcv7C/1689421727166.jpg",Limón TV
+https://59ef525c24caa.streamlock.net//limontv1//limontv1//chunklist_w1710248255.m3u8
+#EXTINF:-1 tvg-logo="https://i.ibb.co/2MNzXN7/Channels4-profile-9.jpg",Norte informativo
+https://videohd.live:19360/8076/8076.m3u8
+#EXTINF:-1 tvg-logo="https://i.ibb.co/P4kpMgk/1689344714578.jpg",Soy Plancha TV
+https://59ef525c24caa.streamlock.net/vmtv/soyplancha/playlist.m3u8
+#EXTINF:-1 tvg-logo="https://i.imgur.com/m3xu6Ms.png",Tele Brunca
+https://59ef525c24caa.streamlock.net/telebrunca/telebrunca/playlist.m3u8
+#EXTINF:-1 tvg-logo="https://i.ibb.co/yn5M8dw/telefides-costa-rica.png",Telefides
+https://s2.cwebtv.net:4433/telefides/telefides/playlist.m3u8
+#EXTINF:-1 tvg-logo="https://i.imgur.com/KUpgeOf.png",Telesur
+https://s1.tvdatta.com:3582/live/telesurlive.m3u8
+#EXTINF:-1 tvg-logo="https://i.imgur.com/7HbISMV.png",Tvsur
+http://tv.ticosmedia.com:1935/TVSUR/TVSUR/playlist.m3u8
+#EXTINF:-1 tvg-logo="https://i.imgur.com/KVVU9PI.png",TV Urbano
+https://59ef525c24caa.streamlock.net/tvurbano/tvurbano/playlist.m3u8
+#EXTINF:-1 tvg-logo="https://www.cxtv.com.br/img/Tvs/Logo/webp-l/1e7e289ab5c66e67ad623c5a1bec9f75.webp",TV Vintage
+https://59ef525c24caa.streamlock.net/vmtv/tvvintage/playlist.m3u8
+#EXTINF:-1 tvg-logo="https://i.imgur.com/XvktUBB.jpg",Surqui TV
+https://videoserver.tmcreativos.com:19360/gesfnvpamn/gesfnvpamn.m3u8
+#EXTINF:-1 tvg-logo="https://xtrematv.com/wp-content/uploads/2023/05/LOGO-2023-XT-chico.png",Extrema TV
+https://videostream.shockmedia.com.ar:19360/videoclub/videoclub.m3u8
+#EXTINF:-1 tvg-logo="https://yt3.googleusercontent.com/jCFvfJuhezHyqYCiBhWQtKvEyyq7syTMkpWRks1E_toGgPdaIMo9sMpxpMYWGBrdf2mSymKL=s900-c-k-c0x00ffffff-no-rj",Cine Accion
+https://stmv6.voxtvhd.com.br/cineaccion/cineaccion/playlist.m3u8
+#EXTINF:-1 tvg-logo="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTrcK72KvjC2H73t1iUyXkKPk0YxCJmQ78jig&s" group-title="películas y mas",Retro honduras
+https://streamtv12.ddns.net:5443/LiveApp/streams/193945633734205616732920.m3u8
+#EXTINF:-1 tvg-logo="https://i.ytimg.com/vi/xsd3iI03lzA/sddefault.jpg",Tele ver cana  12
+https://vdo1.streamgato.us:3342/live/televercanal12live.m3u8
+#EXTINF:-1 tvg-logo="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRr3bmOPMWpG4PLRg_uRAvIEKPCZTprG-_Jw&s",TELE VIDA
+https://tls-cl.cdnz.cl/televida/live/playlist.m3u8
+#EXTINF:-1 tvg-logo="https://theretrochannel.tv/img/theretrofb.jpg",RETRO CHANNEL
+https://5fd5567570c0e.streamlock.net/theretrochannel/stream/playlist.m3u8
+#EXTINF:-1 tvg-logo="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQErFAV54FxgmM5JKD9Xxiq6GYifsgLagX08pesnsLHwiPKfPISfsnlmu4COyGfVa-WWmE&usqp=CAU",Tvs live
+https://imagenuniversaltv.net:3741/live/tvslive.m3u8
+#EXTINF:-1 tvg-logo="https://play-lh.googleusercontent.com/uMDC_ZCZXk4i6YfmdiiPfWRBzYKwdpk9pP2gDmg6qkOWBqodlLBdIYPTJTbX8ZxyTA" group-title="Deportes",FOX Deportes
+https://spinoff.link/live/m3u8.php?url=https://live-news-manifest.tubi.video/live-news-manifest/csm/extlive/tubiprd01,Fox-Sports-Espanol2.m3u8
